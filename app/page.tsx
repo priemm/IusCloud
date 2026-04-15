@@ -1,24 +1,35 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { jsPDF } from "jspdf";
+
+type Cliente = {
+id: number;
+nombre: string;
+};
+
+type Expediente = {
+id: number;
+titulo: string;
+cliente: string;
+};
 
 export default function Home() {
 const [vista, setVista] = useState("dashboard");
 
-const [clientes, setClientes] = useState<any[]>([]);
-const [expedientes, setExpedientes] = useState<any[]>([]);
+const [clientes, setClientes] = useState<Cliente[]>([]);
+const [expedientes, setExpedientes] = useState<Expediente[]>([]);
 
 const [nombreCliente, setNombreCliente] = useState("");
-
 const [tituloExp, setTituloExp] = useState("");
 const [clienteExp, setClienteExp] = useState("");
 
-const [expSeleccionado, setExpSeleccionado] = useState<any>(null);
+const [expSeleccionado, setExpSeleccionado] =
+useState<Expediente | null>(null);
 
 const editorRef = useRef<HTMLDivElement>(null);
 
-// --- LOCAL STORAGE ---
+// --- STORAGE ---
 useEffect(() => {
 const c = localStorage.getItem("clientes");
 const e = localStorage.getItem("expedientes");
@@ -38,7 +49,13 @@ localStorage.setItem("expedientes", JSON.stringify(expedientes));
 // --- CLIENTES ---
 const agregarCliente = () => {
 if (!nombreCliente) return;
-setClientes([...clientes, { id: Date.now(), nombre: nombreCliente }]);
+
+const nuevo = {
+id: Date.now(),
+nombre: nombreCliente,
+};
+
+setClientes([nuevo, ...clientes]);
 setNombreCliente("");
 };
 
@@ -50,18 +67,17 @@ const nuevo = {
 id: Date.now(),
 titulo: tituloExp,
 cliente: clienteExp,
-movimientos: [],
 };
 
 setExpedientes([nuevo, ...expedientes]);
 setTituloExp("");
 };
 
-// --- GENERAR TEXTO ---
+// --- GENERADOR ---
 const generarTexto = () => {
 if (!expSeleccionado) return;
 
-const texto = `Se presenta ${expSeleccionado.cliente} en autos "${expSeleccionado.titulo}".`;
+const texto = `Se presenta ${expSeleccionado.cliente} en autos "${expSeleccionado.titulo}", solicitando lo que corresponda en derecho.`;
 
 if (editorRef.current) {
 editorRef.current.innerText = texto;
@@ -136,7 +152,7 @@ onChange={(e) => setNombreCliente(e.target.value)}
 </>
 )}
 
-{/* EXPEDIENTES LISTA */}
+{/* EXPEDIENTES */}
 {vista === "expedientes" && !expSeleccionado && (
 <>
 <h1>Expedientes</h1>
@@ -158,7 +174,9 @@ onChange={(e) => setClienteExp(e.target.value)}
 {expedientes.map((e) => (
 <div key={e.id}>
 {e.titulo} - {e.cliente}
-<button onClick={() => setExpSeleccionado(e)}>Abrir</button>
+<button onClick={() => setExpSeleccionado(e)}>
+Abrir
+</button>
 </div>
 ))}
 </>
@@ -167,13 +185,13 @@ onChange={(e) => setClienteExp(e.target.value)}
 {/* DETALLE EXPEDIENTE */}
 {expSeleccionado && (
 <>
-<button onClick={() => setExpSeleccionado(null)}>Volver</button>
+<button onClick={() => setExpSeleccionado(null)}>← Volver</button>
 
 <h2>{expSeleccionado.titulo}</h2>
 
 <button onClick={generarTexto}>Generar escrito</button>
 
-<div>
+<div style={{ marginTop: 10 }}>
 <button onClick={() => format("bold")}>B</button>
 <button onClick={() => format("italic")}>I</button>
 <button onClick={() => format("underline")}>U</button>
@@ -190,7 +208,9 @@ marginTop: 10,
 }}
 />
 
-<button onClick={descargarPDF}>Descargar PDF</button>
+<button style={{ marginTop: 10 }} onClick={descargarPDF}>
+Descargar PDF
+</button>
 </>
 )}
 </div>
