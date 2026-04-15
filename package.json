@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "jspdf": "^2.5.1",
-    "next": "16.0.0",
+    "next": "16.0.10",
     "react": "19.2.0",
     "react-dom": "19.2.0"
   },
