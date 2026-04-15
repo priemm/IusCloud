@@ -1,16 +1,16 @@
 export const metadata = {
-  title: "IusCloud",
-  description: "Sistema jurídico",
+title: "IusCloud",
+description: "Sistema jurídico",
 };
 
 export default function RootLayout({
-  children,
+children,
 }: {
-  children: React.ReactNode;
+children: React.ReactNode;
 }) {
-  return (
-    <html lang="es">
-      <body style={{ margin: 0 }}>{children}</body>
-    </html>
-  );
+return (
+<html lang="es">
+<body style={{ margin: 0, background: "#f4f6f8" }}>{children}</body>
+</html>
+);
 }
