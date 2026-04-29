@@ -10,6 +10,13 @@ Authorization: "Bearer " + token
 };
 }
 
+function saveSession(data) {
+token = data.token;
+usuario = data.usuario;
+localStorage.setItem("token", token);
+localStorage.setItem("usuario", JSON.stringify(usuario));
+}
+
 function logout() {
 localStorage.clear();
 token = null;
@@ -17,11 +24,8 @@ usuario = null;
 renderAuth();
 }
 
-function saveSession(data) {
-token = data.token;
-usuario = data.usuario;
-localStorage.setItem("token", token);
-localStorage.setItem("usuario", JSON.stringify(usuario));
+function loginGoogle() {
+alert("Google Login se configura después con Google Cloud OAuth.");
 }
 
 function calendarLink(e) {
@@ -34,13 +38,18 @@ return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title
 function renderAuth() {
 app.innerHTML = `
 <div class="auth">
-<h1>IusCloud PRO</h1>
+<div class="auth-card">
+<h1>IusCloud</h1>
+<p>Tu estudio jurídico digital</p>
+
 <input id="authNombre" placeholder="Nombre / Estudio">
 <input id="authEmail" placeholder="Email">
 <input id="authPassword" type="password" placeholder="Contraseña">
+
 <button onclick="register()">Crear cuenta</button>
 <button onclick="login()">Ingresar</button>
-<button onclick="alert('Google Login lo configuramos después con Google Cloud OAuth')">Ingresar con Google</button>
+<button onclick="loginGoogle()">Ingresar con Google</button>
+</div>
 </div>
 `;
 }
