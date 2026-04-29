@@ -41,54 +41,59 @@ function renderLogin() {
 
       <button onclick="login()">Ingresar</button>
       <button onclick="register()">Crear cuenta</button>
-
-      <hr>
-      <button disabled>Ingresar con Google (próximamente)</button>
     </div>
   `;
 }
 
 async function login() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+  try {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
-  const res = await fetch("/api/auth/login", {
-    method: "POST",
-    body: JSON.stringify({ email, password }),
-    headers: { "Content-Type": "application/json" }
-  });
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+      headers: { "Content-Type": "application/json" }
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  if (!res.ok) {
-    alert(data.error);
-    return;
+    if (!res.ok) {
+      alert(data.error || "Error login");
+      return;
+    }
+
+    guardarSesion(data);
+    iniciarApp();
+  } catch (e) {
+    alert("Error conexión");
   }
-
-  guardarSesion(data);
-  iniciarApp();
 }
 
 async function register() {
-  const nombre = document.getElementById("nombre").value;
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+  try {
+    const nombre = document.getElementById("nombre").value;
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
-  const res = await fetch("/api/auth/register", {
-    method: "POST",
-    body: JSON.stringify({ nombre, email, password }),
-    headers: { "Content-Type": "application/json" }
-  });
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ nombre, email, password }),
+      headers: { "Content-Type": "application/json" }
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  if (!res.ok) {
-    alert(data.error);
-    return;
+    if (!res.ok) {
+      alert(data.error || "Error registro");
+      return;
+    }
+
+    guardarSesion(data);
+    iniciarApp();
+  } catch (e) {
+    alert("Error conexión");
   }
-
-  guardarSesion(data);
-  iniciarApp();
 }
 
 // ================= APP =================
@@ -101,7 +106,7 @@ function iniciarApp() {
         <button onclick="renderDashboard()">Dashboard</button>
         <button onclick="renderClientes()">Clientes</button>
         <button onclick="renderExpedientes()">Expedientes</button>
-        <button onclick="renderTipos()">Tipos de procesos</button>
+        <button onclick="renderTipos()">Tipos</button>
         <button onclick="renderModelos()">Modelos</button>
         <hr>
         <button onclick="cerrarSesion()">Cerrar sesión</button>
@@ -117,18 +122,20 @@ function iniciarApp() {
 // ================= DASHBOARD =================
 
 async function renderDashboard() {
-  const res = await authFetch("/api/dashboard");
-  const data = await res.json();
+  try {
+    const res = await authFetch("/api/dashboard");
+    const data = await res.json();
 
-  document.getElementById("contenido").innerHTML = `
-    <h2>Dashboard</h2>
-    <div class="cards">
-      <div>Clientes: ${data.clientes}</div>
-      <div>Expedientes: ${data.expedientes}</div>
-      <div>Tipos: ${data.tipos}</div>
-      <div>Modelos: ${data.modelos}</div>
-    </div>
-  `;
+    document.getElementById("contenido").innerHTML = `
+      <h2>Dashboard</h2>
+      <div>Clientes: ${data.clientes || 0}</div>
+      <div>Expedientes: ${data.expedientes || 0}</div>
+      <div>Tipos: ${data.tipos || 0}</div>
+      <div>Modelos: ${data.modelos || 0}</div>
+    `;
+  } catch {
+    document.getElementById("contenido").innerHTML = <p>Error cargando dashboard</p>;
+  }
 }
 
 // ================= CLIENTES =================
@@ -150,84 +157,101 @@ async function renderClientes() {
 }
 
 async function cargarClientes() {
-  const q = document.getElementById("buscar")?.value || "";
-  const res = await authFetch("/api/clientes?q=" + q);
-  const data = await res.json();
+  try {
+    const q = document.getElementById("buscar")?.value || "";
+    const res = await authFetch("/api/clientes?q=" + q);
+    const data = await res.json();
 
-  document.getElementById("lista").innerHTML = data.map(c => `
-    <div class="item">
-      ${c.nombre} - ${c.email}
-      <button onclick="eliminarCliente('${c._id}')">X</button>
-    </div>
-  `).join("");
+    document.getElementById("lista").innerHTML = data.map(c => `
+      <div class="item">
+        ${c.nombre || "-"} - ${c.email || "-"}
+        <button onclick="eliminarCliente('${c._id}')">X</button>
+      </div>
+    `).join("");
+  } catch {
+    document.getElementById("lista").innerHTML = "Error cargando clientes";
+  }
 }
 
 async function crearCliente() {
-  const nombre = document.getElementById("nombre").value;
-  const email = document.getElementById("email").value;
+  try {
+    const nombre = document.getElementById("nombre").value;
+    const email = document.getElementById("email").value;
 
-  await authFetch("/api/clientes", {
-    method: "POST",
-    body: JSON.stringify({ nombre, email })
-  });
+    await authFetch("/api/clientes", {
+      method: "POST",
+      body: JSON.stringify({ nombre, email })
+    });
 
-  cargarClientes();
+    cargarClientes();
+  } catch {
+    alert("Error creando cliente");
+  }
 }
 
 async function eliminarCliente(id) {
-  await authFetch("/api/clientes/" + id, { method: "DELETE" });
-  cargarClientes();
+  try {
+    await authFetch("/api/clientes/" + id, {
+      method: "DELETE"
+    });
+
+    cargarClientes();
+  } catch {
+    alert("Error eliminando");
+  }
 }
 
 // ================= EXPEDIENTES =================
 
 async function renderExpedientes() {
-  const res = await authFetch("/api/expedientes");
-  const data = await res.json();
+  try {
+    const res = await authFetch("/api/expedientes");
+    const data = await res.json();
 
-  document.getElementById("contenido").innerHTML = `
-    <h2>Expedientes</h2>
+    document.getElementById("contenido").innerHTML = `
+      <h2>Expedientes</h2>
 
-    ${data.map(e => `
-      <div class="item">
-        ${e.titulo || "Sin título"}
-        ${e.vencimiento ? `
-          <a target="_blank"
-          href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=${e.titulo}&dates=${formatearFecha(e.vencimiento)}/${formatearFecha(e.vencimiento)}">
-          📅
-          </a>
-        ` : ""}
-      </div>
-    `).join("")}
-  `;
-}
-
-function formatearFecha(fecha) {
-  return fecha.replace(/-|:/g, "").slice(0,15);
+      ${data.map(e => `
+        <div class="item">
+          ${e.titulo || "Sin título"}
+        </div>
+      `).join("")}
+    `;
+  } catch {
+    document.getElementById("contenido").innerHTML = "Error expedientes";
+  }
 }
 
 // ================= TIPOS =================
 
 async function renderTipos() {
-  const res = await authFetch("/api/tipos");
-  const data = await res.json();
+  try {
+    const res = await authFetch("/api/tipos");
+    const data = await res.json();
 
-  document.getElementById("contenido").innerHTML = `
-    <h2>Tipos de procesos</h2>
-    ${data.map(t => <div>${t.nombre}</div>).join("")}
-  `;
+    document.getElementById("contenido").innerHTML = `
+      <h2>Tipos</h2>
+      ${data.map(t => <div>${t.nombre}</div>).join("")}
+    `;
+  } catch {
+    document.getElementById("contenido").innerHTML = "Error tipos";
+  }
 }
 
 // ================= MODELOS =================
 
 async function renderModelos() {
-  const res = await authFetch("/api/modelos");
-  const data = await res.json();
+  try {
+    const res = await authFetch("/api/modelos");
+    const data = await res.json();
 
-  document.getElementById("contenido").innerHTML = `
-    <h2>Modelos</h2>
-    ${data.map(m => <div>${m.titulo}</div>).join("")}
-  `;
+    document.getElementById("contenido").innerHTML = `
+      <h2>Modelos</h2>
+      ${data.map(m => <div>${m.titulo}</div>).join("")}
+    `;
+  } catch {
+    document.getElementById("contenido").innerHTML = "Error modelos";
+  }
 }
 
 // ================= INIT =================
