@@ -240,7 +240,7 @@ async function renderExpedientes() {
             <p>Vencimiento: ${e.vencimiento || "Sin fecha"}</p>
           </div>
           <div>
-            ${e.vencimiento ? <a class="calendar" target="_blank" href="${calendarLink(e)}">Google Calendar</a> : ""}
+            ${e.vencimiento ? '<a class="calendar" target="_blank" href="${calendarLink(e)}">Google Calendar</a>' : ""}
             <button class="danger" onclick="eliminarExpediente('${e._id}')">Eliminar</button>
           </div>
         </div>
