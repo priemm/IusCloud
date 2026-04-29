@@ -1,262 +1,239 @@
-const $ = (id) => document.getElementById(id);
+const API = "";
 
-let clientes = [];
-let expedientes = [];
+// ================= AUTH =================
 
-const views = {
-  dashboard: $("view-dashboard"),
-  clientes: $("view-clientes"),
-  expedientes: $("view-expedientes"),
-};
+function guardarSesion(data) {
+  localStorage.setItem("token", data.token);
+  localStorage.setItem("usuario", JSON.stringify(data.usuario));
+}
 
-document.querySelectorAll(".nav-btn").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".nav-btn").forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
+function cerrarSesion() {
+  localStorage.clear();
+  location.reload();
+}
 
-    const view = btn.dataset.view;
-    Object.values(views).forEach((v) => v.classList.remove("active"));
-    views[view].classList.add("active");
-  });
-});
+function getToken() {
+  return localStorage.getItem("token");
+}
 
-async function api(url, options = {}) {
-  const res = await fetch(url, {
-    headers: { "Content-Type": "application/json" },
+async function authFetch(url, options = {}) {
+  const token = getToken();
+
+  return fetch(url, {
     ...options,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    }
   });
-
-  const data = await res.json().catch(() => null);
-
-  if (!res.ok) {
-    throw new Error(data?.error || "Error en la petición");
-  }
-
-  return data;
 }
 
-function money(value) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(Number(value || 0));
-}
+// ================= LOGIN =================
 
-async function cargarTodo() {
-  try {
-    clientes = await api("/api/clientes");
-    expedientes = await api("/api/expedientes");
+function renderLogin() {
+  document.getElementById("app").innerHTML = `
+    <div class="login">
+      <h2>IusCloud</h2>
 
-    renderDashboard();
-    renderClientes();
-    renderClienteSelect();
-    renderExpedientes();
-  } catch (err) {
-    console.error("Error cargando datos:", err);
-    alert("Hubo un error cargando los datos: " + err.message);
-  }
-}
+      <input id="nombre" placeholder="Nombre (registro)">
+      <input id="email" placeholder="Email">
+      <input id="password" type="password" placeholder="Contraseña">
 
-function renderDashboard() {
-  $("stat-clientes").textContent = clientes.length;
-  $("stat-expedientes").textContent = expedientes.length;
+      <button onclick="login()">Ingresar</button>
+      <button onclick="register()">Crear cuenta</button>
 
-  const totalPresup = expedientes.reduce(
-    (acc, e) => acc + Number(e.honorariosPresupuestados || 0),
-    0
-  );
-
-  const totalCobrado = expedientes.reduce(
-    (acc, e) => acc + Number(e.honorariosCobrados || 0),
-    0
-  );
-
-  $("dashboard-resumen").innerHTML = `
-    <div class="summary-line">Clientes cargados: <strong>${clientes.length}</strong></div>
-    <div class="summary-line">Expedientes cargados: <strong>${expedientes.length}</strong></div>
-    <div class="summary-line">Honorarios presupuestados: <strong>${money(totalPresup)}</strong></div>
-    <div>Honorarios cobrados: <strong>${money(totalCobrado)}</strong></div>
+      <hr>
+      <button disabled>Ingresar con Google (próximamente)</button>
+    </div>
   `;
 }
 
-function renderClientes() {
-  $("lista-clientes").innerHTML = clientes.length
-    ? clientes
-        .map(
-          (c) => `
-      <div class="item">
-        <div>
-          <strong>${escapeHtml(c.nombre)}</strong>
-          <div class="muted">${escapeHtml(c.email || "Sin email")} · ${escapeHtml(
-            c.telefono || "Sin teléfono"
-          )}</div>
-          <div class="muted">${escapeHtml(c.dni || "")}${
-            c.domicilio ? " · " + escapeHtml(c.domicilio) : ""
-          }</div>
-        </div>
-        <button class="btn-danger" onclick="eliminarCliente('${c._id}')">Eliminar</button>
+async function login() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const res = await fetch("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+    headers: { "Content-Type": "application/json" }
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    alert(data.error);
+    return;
+  }
+
+  guardarSesion(data);
+  iniciarApp();
+}
+
+async function register() {
+  const nombre = document.getElementById("nombre").value;
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const res = await fetch("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ nombre, email, password }),
+    headers: { "Content-Type": "application/json" }
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    alert(data.error);
+    return;
+  }
+
+  guardarSesion(data);
+  iniciarApp();
+}
+
+// ================= APP =================
+
+function iniciarApp() {
+  document.getElementById("app").innerHTML = `
+    <div class="layout">
+      <div class="sidebar">
+        <h3>IusCloud</h3>
+        <button onclick="renderDashboard()">Dashboard</button>
+        <button onclick="renderClientes()">Clientes</button>
+        <button onclick="renderExpedientes()">Expedientes</button>
+        <button onclick="renderTipos()">Tipos de procesos</button>
+        <button onclick="renderModelos()">Modelos</button>
+        <hr>
+        <button onclick="cerrarSesion()">Cerrar sesión</button>
       </div>
-    `
-        )
-        .join("")
-    : `<p class="muted">No hay clientes cargados.</p>`;
+
+      <div class="main" id="contenido"></div>
+    </div>
+  `;
+
+  renderDashboard();
 }
 
-function renderClienteSelect() {
-  $("exp-cliente").innerHTML =
-    `<option value="">Cliente</option>` +
-    clientes
-      .map((c) => `<option value="${c._id}">${escapeHtml(c.nombre)}</option>`)
-      .join("");
+// ================= DASHBOARD =================
+
+async function renderDashboard() {
+  const res = await authFetch("/api/dashboard");
+  const data = await res.json();
+
+  document.getElementById("contenido").innerHTML = `
+    <h2>Dashboard</h2>
+    <div class="cards">
+      <div>Clientes: ${data.clientes}</div>
+      <div>Expedientes: ${data.expedientes}</div>
+      <div>Tipos: ${data.tipos}</div>
+      <div>Modelos: ${data.modelos}</div>
+    </div>
+  `;
 }
 
-function renderExpedientes() {
-  $("lista-expedientes").innerHTML = expedientes.length
-    ? expedientes
-        .map(
-          (e) => `
-      <div class="item">
-        <div>
-          <strong>${escapeHtml(e.titulo)}</strong>
-          <div class="muted">
-            ${escapeHtml(e.numero || "-")} · ${escapeHtml(e.juzgado || "-")} · ${escapeHtml(
-            e.clienteNombre || "-"
-          )}
-          </div>
-          <div class="muted">
-            ${escapeHtml(e.estado || "En trámite")}
-            ${e.fechaVencimiento ? " · Vence: " + escapeHtml(e.fechaVencimiento) : ""}
-          </div>
-        </div>
-        <button class="btn-danger" onclick="eliminarExpediente('${e._id}')">Eliminar</button>
-      </div>
-    `
-        )
-        .join("")
-    : `<p class="muted">No hay expedientes cargados.</p>`;
+// ================= CLIENTES =================
+
+async function renderClientes() {
+  document.getElementById("contenido").innerHTML = `
+    <h2>Clientes</h2>
+
+    <input id="buscar" placeholder="Buscar..." oninput="cargarClientes()">
+
+    <input id="nombre" placeholder="Nombre">
+    <input id="email" placeholder="Email">
+    <button onclick="crearCliente()">Agregar</button>
+
+    <div id="lista"></div>
+  `;
+
+  cargarClientes();
 }
 
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+async function cargarClientes() {
+  const q = document.getElementById("buscar")?.value || "";
+  const res = await authFetch("/api/clientes?q=" + q);
+  const data = await res.json();
+
+  document.getElementById("lista").innerHTML = data.map(c => `
+    <div class="item">
+      ${c.nombre} - ${c.email}
+      <button onclick="eliminarCliente('${c._id}')">X</button>
+    </div>
+  `).join("");
+}
+
+async function crearCliente() {
+  const nombre = document.getElementById("nombre").value;
+  const email = document.getElementById("email").value;
+
+  await authFetch("/api/clientes", {
+    method: "POST",
+    body: JSON.stringify({ nombre, email })
+  });
+
+  cargarClientes();
 }
 
 async function eliminarCliente(id) {
-  const confirmar = confirm("¿Eliminar este cliente?");
-  if (!confirmar) return;
-
-  try {
-    await fetch(`/api/clientes/${id}`, { method: "DELETE" });
-    await cargarTodo();
-  } catch (err) {
-    console.error(err);
-    alert("No se pudo eliminar el cliente.");
-  }
+  await authFetch("/api/clientes/" + id, { method: "DELETE" });
+  cargarClientes();
 }
 
-async function eliminarExpediente(id) {
-  const confirmar = confirm("¿Eliminar este expediente?");
-  if (!confirmar) return;
+// ================= EXPEDIENTES =================
 
-  try {
-    await fetch(`/api/expedientes/${id}`, { method: "DELETE" });
-    await cargarTodo();
-  } catch (err) {
-    console.error(err);
-    alert("No se pudo eliminar el expediente.");
-  }
+async function renderExpedientes() {
+  const res = await authFetch("/api/expedientes");
+  const data = await res.json();
+
+  document.getElementById("contenido").innerHTML = `
+    <h2>Expedientes</h2>
+
+    ${data.map(e => `
+      <div class="item">
+        ${e.titulo || "Sin título"}
+        ${e.vencimiento ? `
+          <a target="_blank"
+          href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=${e.titulo}&dates=${formatearFecha(e.vencimiento)}/${formatearFecha(e.vencimiento)}">
+          📅
+          </a>
+        ` : ""}
+      </div>
+    `).join("")}
+  `;
 }
 
-$("btn-guardar-cliente").addEventListener("click", async () => {
-  const body = {
-    nombre: $("cliente-nombre").value.trim(),
-    dni: $("cliente-dni").value.trim(),
-    email: $("cliente-email").value.trim(),
-    telefono: $("cliente-telefono").value.trim(),
-    domicilio: $("cliente-domicilio").value.trim(),
-    observaciones: $("cliente-observaciones").value.trim(),
-  };
+function formatearFecha(fecha) {
+  return fecha.replace(/-|:/g, "").slice(0,15);
+}
 
-  if (!body.nombre) {
-    alert("Ingresá el nombre del cliente.");
-    return;
-  }
+// ================= TIPOS =================
 
-  try {
-    await api("/api/clientes", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
+async function renderTipos() {
+  const res = await authFetch("/api/tipos");
+  const data = await res.json();
 
-    $("cliente-nombre").value = "";
-    $("cliente-dni").value = "";
-    $("cliente-email").value = "";
-    $("cliente-telefono").value = "";
-    $("cliente-domicilio").value = "";
-    $("cliente-observaciones").value = "";
+  document.getElementById("contenido").innerHTML = `
+    <h2>Tipos de procesos</h2>
+    ${data.map(t => <div>${t.nombre}</div>).join("")}
+  `;
+}
 
-    await cargarTodo();
-    alert("Cliente guardado correctamente.");
-  } catch (err) {
-    console.error("Error guardando cliente:", err);
-    alert("No se pudo guardar el cliente: " + err.message);
-  }
-});
+// ================= MODELOS =================
 
-$("btn-guardar-expediente").addEventListener("click", async () => {
-  const clienteId = $("exp-cliente").value;
-  const cliente = clientes.find((c) => c._id === clienteId);
+async function renderModelos() {
+  const res = await authFetch("/api/modelos");
+  const data = await res.json();
 
-  const body = {
-    titulo: $("exp-titulo").value.trim(),
-    numero: $("exp-numero").value.trim(),
-    juzgado: $("exp-juzgado").value.trim(),
-    clienteId,
-    clienteNombre: cliente?.nombre || "",
-    tipoProceso: $("exp-tipo").value.trim(),
-    estado: $("exp-estado").value,
-    fechaVencimiento: $("exp-vencimiento").value,
-    descripcion: $("exp-descripcion").value.trim(),
-    honorariosPresupuestados: Number($("exp-presup").value || 0),
-    honorariosCobrados: Number($("exp-cobrados").value || 0),
-  };
+  document.getElementById("contenido").innerHTML = `
+    <h2>Modelos</h2>
+    ${data.map(m => <div>${m.titulo}</div>).join("")}
+  `;
+}
 
-  if (!body.titulo) {
-    alert("Ingresá el título del expediente.");
-    return;
-  }
+// ================= INIT =================
 
-  try {
-    await api("/api/expedientes", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-
-    $("exp-titulo").value = "";
-    $("exp-numero").value = "";
-    $("exp-juzgado").value = "";
-    $("exp-cliente").value = "";
-    $("exp-tipo").value = "";
-    $("exp-vencimiento").value = "";
-    $("exp-descripcion").value = "";
-    $("exp-presup").value = "";
-    $("exp-cobrados").value = "";
-    $("exp-estado").value = "En trámite";
-
-    await cargarTodo();
-    alert("Expediente guardado correctamente.");
-  } catch (err) {
-    console.error("Error guardando expediente:", err);
-    alert("No se pudo guardar el expediente: " + err.message);
-  }
-});
-
-window.eliminarCliente = eliminarCliente;
-window.eliminarExpediente = eliminarExpediente;
-
-cargarTodo();
+if (getToken()) {
+  iniciarApp();
+} else {
+  renderLogin();
+}

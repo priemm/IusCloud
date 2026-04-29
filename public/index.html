@@ -1,104 +1,14 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>IusCloud</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8">
+  <title>IusCloud PRO</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="layout">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-icon">IC</div>
-        <div>
-          <div class="brand-title">IusCloud</div>
-          <div class="brand-subtitle">Jurídico Pro</div>
-        </div>
-      </div>
 
-      <nav class="nav">
-        <button class="nav-btn active" data-view="dashboard">Dashboard</button>
-        <button class="nav-btn" data-view="clientes">Clientes</button>
-        <button class="nav-btn" data-view="expedientes">Expedientes</button>
-      </nav>
-    </aside>
+<div id="app"></div>
 
-    <main class="main">
-      <section id="view-dashboard" class="view active">
-        <h1>Dashboard</h1>
-
-        <div class="cards">
-          <div class="card">
-            <div class="card-title">Clientes</div>
-            <div id="stat-clientes" class="card-number">0</div>
-          </div>
-          <div class="card">
-            <div class="card-title">Expedientes</div>
-            <div id="stat-expedientes" class="card-number">0</div>
-          </div>
-        </div>
-
-        <div class="card mt">
-          <h2>Resumen</h2>
-          <div id="dashboard-resumen"></div>
-        </div>
-      </section>
-
-      <section id="view-clientes" class="view">
-        <div class="card">
-          <h2>Clientes</h2>
-
-          <div class="form-grid">
-            <input id="cliente-nombre" placeholder="Nombre completo" />
-            <input id="cliente-dni" placeholder="DNI / CUIT" />
-            <input id="cliente-email" placeholder="Email" />
-            <input id="cliente-telefono" placeholder="Teléfono" />
-            <input id="cliente-domicilio" placeholder="Domicilio" class="full" />
-            <textarea id="cliente-observaciones" placeholder="Observaciones" class="full"></textarea>
-          </div>
-
-          <button id="btn-guardar-cliente" class="btn mt-sm">Agregar cliente</button>
-
-          <div class="mt">
-            <div id="lista-clientes"></div>
-          </div>
-        </div>
-      </section>
-
-      <section id="view-expedientes" class="view">
-        <div class="card">
-          <h2>Expedientes</h2>
-
-          <div class="form-grid">
-            <input id="exp-titulo" placeholder="Título" />
-            <input id="exp-numero" placeholder="Número de expediente" />
-            <input id="exp-juzgado" placeholder="Juzgado" />
-            <select id="exp-cliente"></select>
-            <input id="exp-tipo" placeholder="Tipo de proceso" />
-            <select id="exp-estado">
-              <option>En trámite</option>
-              <option>Pendiente</option>
-              <option>Urgente</option>
-              <option>Archivado</option>
-              <option>Finalizado</option>
-            </select>
-            <input id="exp-vencimiento" type="date" />
-            <input id="exp-presup" placeholder="Honorarios presupuestados" />
-            <input id="exp-cobrados" placeholder="Honorarios cobrados" />
-            <textarea id="exp-descripcion" placeholder="Descripción" class="full"></textarea>
-          </div>
-
-          <button id="btn-guardar-expediente" class="btn mt-sm">Crear expediente</button>
-
-          <div class="mt">
-            <div id="lista-expedientes"></div>
-          </div>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <script src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
