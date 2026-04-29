@@ -1,44 +1,15 @@
 {
-<<<<<<< HEAD
-"name": "iuscloud",
-"version": "1.0.0",
-"private": true,
-"scripts": {
-"dev": "next dev",
-"build": "next build",
-"start": "next start"
-},
-"dependencies": {
-"jspdf": "2.5.1",
-"next": "15.2.4",
-"react": "18.3.1",
-"react-dom": "18.3.1"
-},
-"devDependencies": {
-"@types/node": "22.13.14",
-"@types/react": "18.3.12",
-"@types/react-dom": "18.3.1",
-"typescript": "5.6.3"
-}
-}
-=======
   "name": "iuscloud",
   "version": "1.0.0",
-  "description": "Sistema juridico con Express y MongoDB",
+  "description": "App IusCloud",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "mongoose": "^9.4.1"
+    "express": "^4.18.2",
+    "mongoose": "^7.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.0"
   }
 }
->>>>>>> db75262 (primer commit)
