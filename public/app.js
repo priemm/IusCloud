@@ -4,393 +4,360 @@ let token = localStorage.getItem("token");
 let usuario = JSON.parse(localStorage.getItem("usuario") || "null");
 
 function headers() {
-  return {
-    "Content-Type": "application/json",
-    Authorization: "Bearer " + token
-  };
-}
-
-function saveSession(data) {
-  token = data.token;
-  usuario = data.usuario;
-  localStorage.setItem("token", token);
-  localStorage.setItem("usuario", JSON.stringify(usuario));
+return {
+"Content-Type": "application/json",
+Authorization: "Bearer " + token
+};
 }
 
 function logout() {
-  localStorage.clear();
-  token = null;
-  usuario = null;
-  renderAuth();
+localStorage.clear();
+token = null;
+usuario = null;
+renderAuth();
 }
 
-function calendarLink(exp) {
-  const title = encodeURIComponent(exp.tarea || exp.titulo || "Vencimiento");
-  const details = encodeURIComponent(exp.descripcion || "");
-  const date = exp.vencimiento ? exp.vencimiento.replaceAll("-", "") : "";
-  return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${date}/${date}&details=${details}';
+function saveSession(data) {
+token = data.token;
+usuario = data.usuario;
+localStorage.setItem("token", token);
+localStorage.setItem("usuario", JSON.stringify(usuario));
+}
+
+function calendarLink(e) {
+const title = encodeURIComponent(e.tarea || e.titulo || "Vencimiento");
+const details = encodeURIComponent(e.descripcion || "");
+const date = e.vencimiento ? e.vencimiento.replaceAll("-", "") : "";
+return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${date}/${date}&details=${details}`;
 }
 
 function renderAuth() {
-  app.innerHTML = `
-    <div class="auth">
-      <div class="auth-card">
-        <h1>IusCloud PRO</h1>
-        <p>Gestión jurídica para estudios</p>
-
-        <input id="authNombre" placeholder="Nombre / Estudio">
-        <input id="authEmail" placeholder="Email">
-        <input id="authPassword" type="password" placeholder="Contraseña">
-
-        <button onclick="login()">Ingresar</button>
-        <button class="secondary" onclick="register()">Crear cuenta</button>
-        <button class="google" onclick="alert('Google Login se configura después con Google Cloud OAuth')">Ingresar con Google</button>
-      </div>
-    </div>
-  `;
-}
-
-async function login() {
-  const email = document.getElementById("authEmail").value.trim();
-  const password = document.getElementById("authPassword").value.trim();
-
-  const res = await fetch("/api/auth/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password })
-  });
-
-  const data = await res.json();
-  if (!res.ok) return alert(data.error || "No se pudo ingresar");
-
-  saveSession(data);
-  renderApp("dashboard");
+app.innerHTML = `
+<div class="auth">
+<h1>IusCloud PRO</h1>
+<input id="authNombre" placeholder="Nombre / Estudio">
+<input id="authEmail" placeholder="Email">
+<input id="authPassword" type="password" placeholder="Contraseña">
+<button onclick="register()">Crear cuenta</button>
+<button onclick="login()">Ingresar</button>
+<button onclick="alert('Google Login lo configuramos después con Google Cloud OAuth')">Ingresar con Google</button>
+</div>
+`;
 }
 
 async function register() {
-  const nombre = document.getElementById("authNombre").value.trim();
-  const email = document.getElementById("authEmail").value.trim();
-  const password = document.getElementById("authPassword").value.trim();
+const nombre = authNombre.value.trim();
+const email = authEmail.value.trim();
+const password = authPassword.value.trim();
 
-  const res = await fetch("/api/auth/register", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ nombre, email, password, estudio: nombre })
-  });
+const res = await fetch("/api/auth/register", {
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({ nombre, email, password, estudio: nombre })
+});
 
-  const data = await res.json();
-  if (!res.ok) return alert(data.error || "No se pudo crear cuenta");
+const data = await res.json();
+if (!res.ok) return alert(data.error || "Error al registrar");
 
-  saveSession(data);
-  renderApp("dashboard");
+saveSession(data);
+renderDashboard();
+}
+
+async function login() {
+const email = authEmail.value.trim();
+const password = authPassword.value.trim();
+
+const res = await fetch("/api/auth/login", {
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({ email, password })
+});
+
+const data = await res.json();
+if (!res.ok) return alert(data.error || "Error al ingresar");
+
+saveSession(data);
+renderDashboard();
 }
 
 function layout(content) {
-  app.innerHTML = `
-    <div class="layout">
-      <aside class="sidebar">
-        <div class="logo">IC</div>
-        <h2>IusCloud</h2>
-        <small>${usuario?.estudio || "Estudio jurídico"}</small>
+app.innerHTML = `
+<div class="layout">
+<aside class="sidebar">
+<div class="logo">IC</div>
+<h2>IusCloud</h2>
+<small>${usuario?.estudio || "Mi estudio jurídico"}</small>
 
-        <nav>
-          <button onclick="renderApp('dashboard')">Dashboard</button>
-          <button onclick="renderApp('clientes')">Clientes</button>
-          <button onclick="renderApp('expedientes')">Expedientes</button>
-          <button onclick="renderApp('tipos')">Tipos de procesos</button>
-          <button onclick="renderApp('modelos')">Modelos</button>
-        </nav>
+<button onclick="renderDashboard()">Dashboard</button>
+<button onclick="renderClientes()">Clientes</button>
+<button onclick="renderExpedientes()">Expedientes</button>
+<button onclick="renderTipos()">Tipos de procesos</button>
+<button onclick="renderModelos()">Modelos</button>
+<button onclick="logout()">Cerrar sesión</button>
+</aside>
 
-        <button class="logout" onclick="logout()">Cerrar sesión</button>
-      </aside>
-
-      <main class="main">${content}</main>
-    </div>
-  `;
-}
-
-async function renderApp(section) {
-  if (!token) return renderAuth();
-
-  if (section === "dashboard") return renderDashboard();
-  if (section === "clientes") return renderClientes();
-  if (section === "expedientes") return renderExpedientes();
-  if (section === "tipos") return renderTipos();
-  if (section === "modelos") return renderModelos();
+<main class="main">
+${content}
+</main>
+</div>
+`;
 }
 
 async function renderDashboard() {
-  const res = await fetch("/api/dashboard", { headers: headers() });
-  if (res.status === 401) return logout();
+const res = await fetch("/api/dashboard", { headers: headers() });
+if (res.status === 401) return logout();
 
-  const d = await res.json();
+const d = await res.json();
 
-  layout(`
-    <h1>Dashboard</h1>
-    <div class="cards">
-      <div class="card"><span>Clientes</span><strong>${d.clientes || 0}</strong></div>
-      <div class="card"><span>Expedientes</span><strong>${d.expedientes || 0}</strong></div>
-      <div class="card"><span>Tipos</span><strong>${d.tipos || 0}</strong></div>
-      <div class="card"><span>Modelos</span><strong>${d.modelos || 0}</strong></div>
-    </div>
-    <section class="panel">
-      <h2>Resumen</h2>
-      <p>Bienvenida/o a tu estudio jurídico digital.</p>
-    </section>
-  `);
+layout(`
+<h1>Dashboard</h1>
+<div class="cards">
+<div class="card"><span>Clientes</span><strong>${d.clientes || 0}</strong></div>
+<div class="card"><span>Expedientes</span><strong>${d.expedientes || 0}</strong></div>
+<div class="card"><span>Tipos</span><strong>${d.tipos || 0}</strong></div>
+<div class="card"><span>Modelos</span><strong>${d.modelos || 0}</strong></div>
+</div>
+`);
 }
 
 async function renderClientes(q = "") {
-  const res = await fetch("/api/clientes?q=" + encodeURIComponent(q), { headers: headers() });
-  if (res.status === 401) return logout();
+const res = await fetch("/api/clientes?q=" + encodeURIComponent(q), { headers: headers() });
+if (res.status === 401) return logout();
 
-  const clientes = await res.json();
+const clientes = await res.json();
 
-  layout(`
-    <h1>Clientes</h1>
+layout(`
+<h1>Clientes</h1>
 
-    <section class="panel">
-      <input id="buscarCliente" placeholder="Buscar por nombre, DNI, email o teléfono" oninput="renderClientes(this.value)">
-    </section>
+<input class="search" placeholder="Buscar por nombre, DNI, email o teléfono" oninput="renderClientes(this.value)">
 
-    <section class="panel">
-      <div class="grid">
-        <input id="cNombre" placeholder="Nombre completo">
-        <input id="cDni" placeholder="DNI / CUIT">
-        <input id="cEmail" placeholder="Email">
-        <input id="cTelefono" placeholder="Teléfono">
-        <input id="cDomicilio" placeholder="Domicilio">
-        <textarea id="cObs" placeholder="Observaciones"></textarea>
-      </div>
-      <button onclick="guardarCliente()">Agregar cliente</button>
-    </section>
+<div class="form">
+<input id="cNombre" placeholder="Nombre completo">
+<input id="cDni" placeholder="DNI / CUIT">
+<input id="cEmail" placeholder="Email">
+<input id="cTelefono" placeholder="Teléfono">
+<input id="cDomicilio" placeholder="Domicilio">
+<textarea id="cObs" placeholder="Observaciones"></textarea>
+<button onclick="guardarCliente()">Agregar cliente</button>
+</div>
 
-    <section class="list">
-      ${clientes.map(c => `
-        <div class="item">
-          <div>
-            <strong>${c.nombre || "Sin nombre"}</strong>
-            <p>${c.email || "Sin email"} · ${c.telefono || "Sin teléfono"} · ${c.dni || ""}</p>
-          </div>
-          <button class="danger" onclick="eliminarCliente('${c._id}')">Eliminar</button>
-        </div>
-      `).join("")}
-    </section>
-  `);
+<div class="list">
+${clientes.map(c => `
+<div class="item">
+<div>
+<strong>${c.nombre || "Sin nombre"}</strong>
+<p>${c.email || "Sin email"} · ${c.telefono || "Sin teléfono"} · ${c.dni || ""}</p>
+</div>
+<button onclick="eliminarCliente('${c._id}')">Eliminar</button>
+</div>
+`).join("")}
+</div>
+`);
 }
 
 async function guardarCliente() {
-  const body = {
-    nombre: cNombre.value,
-    dni: cDni.value,
-    email: cEmail.value,
-    telefono: cTelefono.value,
-    domicilio: cDomicilio.value,
-    observaciones: cObs.value
-  };
+const body = {
+nombre: cNombre.value,
+dni: cDni.value,
+email: cEmail.value,
+telefono: cTelefono.value,
+domicilio: cDomicilio.value,
+observaciones: cObs.value
+};
 
-  const res = await fetch("/api/clientes", {
-    method: "POST",
-    headers: headers(),
-    body: JSON.stringify(body)
-  });
+const res = await fetch("/api/clientes", {
+method: "POST",
+headers: headers(),
+body: JSON.stringify(body)
+});
 
-  if (!res.ok) return alert("No se pudo guardar cliente");
-  renderClientes();
+if (!res.ok) return alert("No se pudo guardar cliente");
+renderClientes();
 }
 
 async function eliminarCliente(id) {
-  await fetch("/api/clientes/" + id, {
-    method: "DELETE",
-    headers: headers()
-  });
-  renderClientes();
+await fetch("/api/clientes/" + id, { method: "DELETE", headers: headers() });
+renderClientes();
 }
 
 async function renderExpedientes() {
-  const res = await fetch("/api/expedientes", { headers: headers() });
-  if (res.status === 401) return logout();
+const clientesRes = await fetch("/api/clientes", { headers: headers() });
+const expRes = await fetch("/api/expedientes", { headers: headers() });
 
-  const expedientes = await res.json();
+if (expRes.status === 401) return logout();
 
-  layout(`
-    <h1>Expedientes</h1>
+const clientes = await clientesRes.json();
+const expedientes = await expRes.json();
 
-    <section class="panel">
-      <div class="grid">
-        <input id="eTitulo" placeholder="Carátula / Título">
-        <input id="eNumero" placeholder="Número de expediente">
-        <input id="eJuzgado" placeholder="Juzgado">
-        <input id="eCliente" placeholder="Cliente">
-        <input id="eTipo" placeholder="Tipo de proceso">
-        <input id="eVencimiento" type="date">
-        <input id="eTarea" placeholder="Tarea / vencimiento">
-        <input id="eEstado" placeholder="Estado">
-        <textarea id="eDesc" placeholder="Descripción"></textarea>
-      </div>
-      <button onclick="guardarExpediente()">Agregar expediente</button>
-    </section>
+layout(`
+<h1>Expedientes</h1>
 
-    <section class="list">
-      ${expedientes.map(e => `
-        <div class="item">
-          <div>
-            <strong>${e.titulo || "Sin título"}</strong>
-            <p>${e.numero || ""} · ${e.juzgado || ""} · ${e.cliente || ""}</p>
-            <p>Vencimiento: ${e.vencimiento || "Sin fecha"}</p>
-          </div>
-          <div>
-            ${e.vencimiento ? '<a class="calendar" target="_blank" href="${calendarLink(e)}">Google Calendar</a>' : ""}
-            <button class="danger" onclick="eliminarExpediente('${e._id}')">Eliminar</button>
-          </div>
-        </div>
-      `).join("")}
-    </section>
-  `);
+<div class="form">
+<input id="eTitulo" placeholder="Carátula / Título">
+<input id="eNumero" placeholder="Número de expediente">
+<input id="eJuzgado" placeholder="Juzgado">
+
+<select id="eCliente">
+<option value="">Seleccionar cliente</option>
+${clientes.map(c => `<option value="${c.nombre || ""}">${c.nombre || "Sin nombre"}</option>`).join("")}
+</select>
+
+<input id="eTipo" placeholder="Tipo de proceso">
+<input id="eVencimiento" type="date">
+<input id="eTarea" placeholder="Tarea / vencimiento">
+<input id="eEstado" placeholder="Estado">
+<textarea id="eDesc" placeholder="Descripción"></textarea>
+
+<button onclick="guardarExpediente()">Agregar expediente</button>
+</div>
+
+<div class="list">
+${expedientes.map(e => `
+<div class="item">
+<div>
+<strong>${e.titulo || "Sin título"}</strong>
+<p>${e.numero || ""} · ${e.juzgado || ""} · ${e.cliente || ""}</p>
+<p>Vencimiento: ${e.vencimiento || "Sin fecha"}</p>
+</div>
+<div>
+${e.vencimiento ? `<a target="_blank" href="${calendarLink(e)}">Google Calendar</a>` : ""}
+<button onclick="eliminarExpediente('${e._id}')">Eliminar</button>
+</div>
+</div>
+`).join("")}
+</div>
+`);
 }
 
 async function guardarExpediente() {
-  const body = {
-    titulo: eTitulo.value,
-    numero: eNumero.value,
-    juzgado: eJuzgado.value,
-    cliente: eCliente.value,
-    tipo: eTipo.value,
-    vencimiento: eVencimiento.value,
-    tarea: eTarea.value,
-    estado: eEstado.value,
-    descripcion: eDesc.value
-  };
+const body = {
+titulo: eTitulo.value,
+numero: eNumero.value,
+juzgado: eJuzgado.value,
+cliente: eCliente.value,
+tipo: eTipo.value,
+vencimiento: eVencimiento.value,
+tarea: eTarea.value,
+estado: eEstado.value,
+descripcion: eDesc.value
+};
 
-  const res = await fetch("/api/expedientes", {
-    method: "POST",
-    headers: headers(),
-    body: JSON.stringify(body)
-  });
+const res = await fetch("/api/expedientes", {
+method: "POST",
+headers: headers(),
+body: JSON.stringify(body)
+});
 
-  if (!res.ok) return alert("No se pudo guardar expediente");
-  renderExpedientes();
+if (!res.ok) return alert("No se pudo guardar expediente");
+renderExpedientes();
 }
 
 async function eliminarExpediente(id) {
-  await fetch("/api/expedientes/" + id, {
-    method: "DELETE",
-    headers: headers()
-  });
-  renderExpedientes();
+await fetch("/api/expedientes/" + id, { method: "DELETE", headers: headers() });
+renderExpedientes();
 }
 
 async function renderTipos() {
-  const res = await fetch("/api/tipos", { headers: headers() });
-  if (res.status === 401) return logout();
+const res = await fetch("/api/tipos", { headers: headers() });
+if (res.status === 401) return logout();
 
-  const tipos = await res.json();
+const tipos = await res.json();
 
-  layout(`
-    <h1>Tipos de procesos</h1>
+layout(`
+<h1>Tipos de procesos</h1>
 
-    <section class="panel">
-      <input id="tNombre" placeholder="Nombre del tipo de proceso">
-      <textarea id="tDesc" placeholder="Descripción"></textarea>
-      <button onclick="guardarTipo()">Agregar tipo</button>
-    </section>
+<div class="form">
+<input id="tNombre" placeholder="Nombre del tipo de proceso">
+<textarea id="tDesc" placeholder="Descripción"></textarea>
+<button onclick="guardarTipo()">Agregar tipo</button>
+</div>
 
-    <section class="list">
-      ${tipos.map(t => `
-        <div class="item">
-          <div>
-            <strong>${t.nombre || "Sin nombre"}</strong>
-            <p>${t.descripcion || ""}</p>
-          </div>
-          <button class="danger" onclick="eliminarTipo('${t._id}')">Eliminar</button>
-        </div>
-      `).join("")}
-    </section>
-  `);
+<div class="list">
+${tipos.map(t => `
+<div class="item">
+<div>
+<strong>${t.nombre || "Sin nombre"}</strong>
+<p>${t.descripcion || ""}</p>
+</div>
+<button onclick="eliminarTipo('${t._id}')">Eliminar</button>
+</div>
+`).join("")}
+</div>
+`);
 }
 
 async function guardarTipo() {
-  const body = {
-    nombre: tNombre.value,
-    descripcion: tDesc.value
-  };
+const res = await fetch("/api/tipos", {
+method: "POST",
+headers: headers(),
+body: JSON.stringify({
+nombre: tNombre.value,
+descripcion: tDesc.value
+})
+});
 
-  const res = await fetch("/api/tipos", {
-    method: "POST",
-    headers: headers(),
-    body: JSON.stringify(body)
-  });
-
-  if (!res.ok) return alert("No se pudo guardar tipo");
-  renderTipos();
+if (!res.ok) return alert("No se pudo guardar tipo");
+renderTipos();
 }
 
 async function eliminarTipo(id) {
-  await fetch("/api/tipos/" + id, {
-    method: "DELETE",
-    headers: headers()
-  });
-  renderTipos();
+await fetch("/api/tipos/" + id, { method: "DELETE", headers: headers() });
+renderTipos();
 }
 
 async function renderModelos() {
-  const res = await fetch("/api/modelos", { headers: headers() });
-  if (res.status === 401) return logout();
+const res = await fetch("/api/modelos", { headers: headers() });
+if (res.status === 401) return logout();
 
-  const modelos = await res.json();
+const modelos = await res.json();
 
-  layout(`
-    <h1>Modelos</h1>
+layout(`
+<h1>Modelos</h1>
 
-    <section class="panel">
-      <input id="mTitulo" placeholder="Título del modelo">
-      <input id="mTipo" placeholder="Tipo">
-      <textarea id="mContenido" placeholder="Contenido del modelo"></textarea>
-      <button onclick="guardarModelo()">Agregar modelo</button>
-    </section>
+<div class="form">
+<input id="mTitulo" placeholder="Título del modelo">
+<input id="mTipo" placeholder="Tipo">
+<textarea id="mContenido" placeholder="Contenido del modelo"></textarea>
+<button onclick="guardarModelo()">Agregar modelo</button>
+</div>
 
-    <section class="list">
-      ${modelos.map(m => `
-        <div class="item">
-          <div>
-            <strong>${m.titulo || "Sin título"}</strong>
-            <p>${m.tipo || ""}</p>
-            <pre>${m.contenido || ""}</pre>
-          </div>
-          <button class="danger" onclick="eliminarModelo('${m._id}')">Eliminar</button>
-        </div>
-      `).join("")}
-    </section>
-  `);
+<div class="list">
+${modelos.map(m => `
+<div class="item">
+<div>
+<strong>${m.titulo || "Sin título"}</strong>
+<p>${m.tipo || ""}</p>
+<pre>${m.contenido || ""}</pre>
+</div>
+<button onclick="eliminarModelo('${m._id}')">Eliminar</button>
+</div>
+`).join("")}
+</div>
+`);
 }
 
 async function guardarModelo() {
-  const body = {
-    titulo: mTitulo.value,
-    tipo: mTipo.value,
-    contenido: mContenido.value
-  };
+const res = await fetch("/api/modelos", {
+method: "POST",
+headers: headers(),
+body: JSON.stringify({
+titulo: mTitulo.value,
+tipo: mTipo.value,
+contenido: mContenido.value
+})
+});
 
-  const res = await fetch("/api/modelos", {
-    method: "POST",
-    headers: headers(),
-    body: JSON.stringify(body)
-  });
-
-  if (!res.ok) return alert("No se pudo guardar modelo");
-  renderModelos();
+if (!res.ok) return alert("No se pudo guardar modelo");
+renderModelos();
 }
 
 async function eliminarModelo(id) {
-  await fetch("/api/modelos/" + id, {
-    method: "DELETE",
-    headers: headers()
-  });
-  renderModelos();
+await fetch("/api/modelos/" + id, { method: "DELETE", headers: headers() });
+renderModelos();
 }
 
 if (token) {
-  renderApp("dashboard");
+renderDashboard();
 } else {
-  renderAuth();
+renderAuth();
 }
