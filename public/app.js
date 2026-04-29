@@ -28,7 +28,7 @@ function calendarLink(exp) {
   const title = encodeURIComponent(exp.tarea || exp.titulo || "Vencimiento");
   const details = encodeURIComponent(exp.descripcion || "");
   const date = exp.vencimiento ? exp.vencimiento.replaceAll("-", "") : "";
-  return https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${date}/${date}&details=${details};
+  return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${date}/${date}&details=${details}';
 }
 
 function renderAuth() {
