@@ -1,44 +1,141 @@
-body {
-  font-family: Arial;
+/* ===== RESET ===== /
+* {
   margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Inter", sans-serif;
 }
 
-.layout {
+/ ===== BODY ===== /
+body {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+/ ===== LAYOUT ===== /
+.container {
   display: flex;
+  height: 100vh;
 }
 
+/ ===== SIDEBAR ===== /
 .sidebar {
-  width: 220px;
-  background: #111;
-  color: white;
+  width: 240px;
+  background: linear-gradient(180deg, #020617, #0f172a);
   padding: 20px;
-  height: 100vh;
+  border-right: 1px solid #1e293b;
+}
+
+.sidebar h2 {
+  color: #38bdf8;
+  margin-bottom: 20px;
+  font-size: 20px;
 }
 
 .sidebar button {
   width: 100%;
-  margin: 5px 0;
+  padding: 10px;
+  margin-bottom: 10px;
+  background: transparent;
+  border: 1px solid #1e293b;
+  color: #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
 }
 
+.sidebar button:hover {
+  background: #1e293b;
+}
+
+/ ===== MAIN ===== /
 .main {
   flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+}
+
+/ ===== TITLES ===== /
+h1 {
+  margin-bottom: 20px;
+  color: #38bdf8;
+}
+
+/ ===== CARDS ===== /
+.card {
+  background: #020617;
   padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #1e293b;
+  margin-bottom: 20px;
 }
 
-.login {
-  width: 300px;
-  margin: 100px auto;
-  display: flex;
-  flex-direction: column;
+/ ===== INPUTS ===== /
+input, select, textarea {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  background: #020617;
+  border: 1px solid #1e293b;
+  color: #e2e8f0;
+  border-radius: 8px;
 }
 
-input, button {
-  margin: 5px 0;
-  padding: 8px;
+input::placeholder, textarea::placeholder {
+  color: #64748b;
 }
 
+/ ===== BUTTONS ===== /
+button {
+  padding: 10px 15px;
+  background: #38bdf8;
+  border: none;
+  border-radius: 8px;
+  color: #020617;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+button:hover {
+  background: #0ea5e9;
+}
+
+/ ===== LIST ITEMS ===== /
 .item {
-  display: flex;
-  justify-content: space-between;
-  margin: 5px 0;
+  background: #020617;
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid #1e293b;
+  margin-bottom: 10px;
+}
+
+.item strong {
+  color: #38bdf8;
+}
+
+/ ===== DELETE BUTTON ===== /
+.delete-btn {
+  background: #ef4444;
+  color: white;
+  margin-top: 10px;
+}
+
+.delete-btn:hover {
+  background: #dc2626;
+}
+
+/ ===== SEARCH ===== /
+.search {
+  margin-bottom: 15px;
+}
+
+/ ===== SCROLLBAR ===== */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
 }
