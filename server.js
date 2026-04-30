@@ -6,12 +6,43 @@ const path = require("path");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const multer = require("multer");
+const fs = require("fs");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
+
+const uploadDir = path.join(__dirname, "uploads");
+
+if (!fs.existsSync(uploadDir)) {
+fs.mkdirSync(uploadDir);
+}
+
+app.use("/uploads", express.static(uploadDir));
 app.use(express.static(path.join(__dirname, "public")));
+
+const storage = multer.diskStorage({
+destination: function (req, file, cb) {
+cb(null, uploadDir);
+},
+filename: function (req, file, cb) {
+const cleanName = file.originalname.replace(/\s+/g, "-");
+const uniqueName = Date.now() + "-" + cleanName;
+cb(null, uniqueName);
+},
+});
+
+const upload = multer({
+storage,
+fileFilter: function (req, file, cb) {
+if (file.mimetype !== "application/pdf") {
+return cb(new Error("Solo se permiten archivos PDF"));
+}
+cb(null, true);
+},
+});
 
 const JWT_SECRET = process.env.JWT_SECRET || "iuscloud_secret_dev";
 
@@ -134,6 +165,20 @@ res.status(401).json({ error: "Sesión inválida" });
 }
 }
 
+// UPLOAD PDF
+app.post("/api/upload", auth, upload.single("archivo"), (req, res) => {
+try {
+if (!req.file) {
+return res.status(400).json({ error: "No se subió archivo" });
+}
+
+const url = "/uploads/" + req.file.filename;
+res.json({ ok: true, url });
+} catch {
+res.status(500).json({ error: "Error al subir archivo" });
+}
+});
+
 // AUTH
 app.post("/api/auth/register", async (req, res) => {
 try {
@@ -176,7 +221,7 @@ email: usuario.email,
 estudio: usuario.estudio,
 },
 });
-} catch (err) {
+} catch {
 res.status(500).json({ error: "Error al registrar usuario" });
 }
 });
@@ -443,7 +488,12 @@ tarea.estado = req.body.estado || tarea.estado;
 
 expediente.historial.push({
 tipo: "Tarea",
-detalle: "Tarea actualizada: " + (tarea.titulo || "Sin título") + " (" + tarea.estado + ")",
+detalle:
+"Tarea actualizada: " +
+(tarea.titulo || "Sin título") +
+" (" +
+tarea.estado +
+")",
 });
 
 await expediente.save();
@@ -475,7 +525,10 @@ concepto: req.body.concepto,
 
 expediente.historial.push({
 tipo: "Contabilidad",
-detalle: (req.body.tipo || "Movimiento") + ": $" + Number(req.body.monto || 0),
+detalle:
+(req.body.tipo || "Movimiento") +
+": $" +
+Number(req.body.monto || 0),
 });
 
 await expediente.save();
@@ -489,7 +542,10 @@ res.status(500).json({ error: "Error al guardar movimiento" });
 // TIPOS
 app.get("/api/tipos", auth, async (req, res) => {
 try {
-const tipos = await TipoProceso.find({ userId: req.user.id }).sort({ createdAt: -1 });
+const tipos = await TipoProceso.find({ userId: req.user.id }).sort({
+createdAt: -1,
+});
+
 res.json(tipos);
 } catch {
 res.status(500).json({ error: "Error al cargar tipos" });
@@ -525,7 +581,10 @@ res.status(500).json({ error: "Error al eliminar tipo" });
 // MODELOS
 app.get("/api/modelos", auth, async (req, res) => {
 try {
-const modelos = await Modelo.find({ userId: req.user.id }).sort({ createdAt: -1 });
+const modelos = await Modelo.find({ userId: req.user.id }).sort({
+createdAt: -1,
+});
+
 res.json(modelos);
 } catch {
 res.status(500).json({ error: "Error al cargar modelos" });
